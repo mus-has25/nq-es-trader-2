@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 import time
 from datetime import datetime, timedelta, time as dt_time
+from zoneinfo import ZoneInfo
 from dataclasses import dataclass, field
 import pandas as pd
 from config import Config
@@ -29,6 +30,7 @@ log = logging.getLogger(__name__)
 
 TICK_SIZE = 0.25
 MNQ_TICK_VALUE = 0.50
+CT = ZoneInfo('America/Chicago')
 
 
 @dataclass
@@ -103,15 +105,15 @@ class LiveExecutor:
             time.sleep(30)
 
     def _tick(self):
-        now = datetime.now()
+        now = datetime.now(CT)
         today = now.date()
 
         if today != self.cur_date:
             self._new_day(today)
 
-        if now.time() < dt_time(9, 30):
+        if now.time() < dt_time(8, 30):
             return
-        if now.time() >= dt_time(16, 55):
+        if now.time() >= dt_time(14, 55):
             if self.trade:
                 log.info("Session close — flattening")
                 self._close_trade('session_close')
@@ -206,8 +208,8 @@ class LiveExecutor:
         if sig_key == self.last_signal_key:
             return
 
-        now = datetime.now()
-        sig_age = (now - sig.ts.to_pydatetime().replace(tzinfo=None)).total_seconds()
+        now = datetime.now(CT)
+        sig_age = (now - sig.ts.to_pydatetime().replace(tzinfo=CT)).total_seconds()
         if sig_age > 120:
             return
 
@@ -250,7 +252,7 @@ class LiveExecutor:
             stop_price=sig.stop,
             target_price=sig.target,
             risk=risk,
-            entry_time=datetime.now(),
+            entry_time=datetime.now(CT),
             contracts=self.contracts,
             order_ids=ids,
         )
@@ -313,13 +315,13 @@ class LiveExecutor:
             self.broker.modify_stop(t.entry_price)
             log.info(f"    Moved stop to BREAKEVEN @ {t.entry_price:.2f}")
 
-        elapsed = (datetime.now() - t.entry_time).total_seconds() / 60
+        elapsed = (datetime.now(CT) - t.entry_time).total_seconds() / 60
         if elapsed >= time_stop_min and not t.moved_be:
             log.info(f"    TIME STOP ({time_stop_min} min)")
             self._close_trade('time_stop')
             return
 
-        if datetime.now().time() >= dt_time(16, 55):
+        if datetime.now(CT).time() >= dt_time(14, 55):
             log.info("    SESSION CLOSE")
             self._close_trade('session_close')
 
