@@ -1,10 +1,9 @@
 """Live executor — runs OU+VWAP strategy on TopStepX funded account.
 
 Two-phase schedule:
-- Phase 1: Mon-Fri (Tue/Wed at half size), first withdraw $1K at $53K
-- Phase 2: Mon-Fri (Tue/Wed at half size), withdraw $2K at $54K
+- Phase 1: Mon-Fri 20 MNQ, first withdraw $1K at $53K
+- Phase 2: Mon-Fri 20 MNQ, withdraw $2K at $54K
 - Switch to Phase 2 after first payout, $2K buffer maintained throughout
-- Tue/Wed always at half size (10 MNQ) regardless of phase
 
 Signal filter:
 - Skip signals with risk 30-50 ticks (55% WR noise, $37/trade avg)
@@ -83,7 +82,6 @@ class LiveExecutor:
         self.active_models = {'ou_rev', 'vwap_rev'}
         self.withdraw_buffer_usd = 2000
         self.phase = 1
-        self.contracts_half = contracts // 2
         self.contracts_reduced = 15
         self.dd_cutback_usd = 1500
         self.risk_skip_min = 30
@@ -109,13 +107,13 @@ class LiveExecutor:
         log.info(f"Account balance: ${self.start_balance:,.0f}")
 
         log.info(f"Strategy active — Phase {self.phase} | "
-                 f"{self.contracts} MNQ (half: {self.contracts_half}) | "
+                 f"{self.contracts} MNQ | "
                  f"Models: {', '.join(sorted(self.active_models))}")
         log.info(f"Risk filter: skip {self.risk_skip_min}-{self.risk_skip_max} tick signals | "
                  f"DD cutback: {self.contracts_reduced} MNQ @ ${self.dd_cutback_usd} DD")
-        log.info(f"Phase 1: Mon-Fri (Tue/Wed {self.contracts_half} MNQ), "
+        log.info(f"Phase 1: Mon-Fri {self.contracts} MNQ, "
                  f"first withdraw $1K at $53K")
-        log.info(f"Phase 2: Mon-Fri (Tue/Wed {self.contracts_half} MNQ), "
+        log.info(f"Phase 2: Mon-Fri {self.contracts} MNQ, "
                  f"withdraw $2K at $54K")
         log.info("Waiting for signals...\n")
 
@@ -187,8 +185,8 @@ class LiveExecutor:
                  f"Cushion: ${cushion:,.0f} | "
                  f"Win days: {self.winning_days} | "
                  f"Trading days: {self.total_days}")
-        phase_desc = ("5d/wk, half Tue/Wed, $1K @ $53K" if self.phase == 1
-                      else "5d/wk, half Tue/Wed, $2K @ $54K")
+        phase_desc = ("5d/wk 20 MNQ, $1K @ $53K" if self.phase == 1
+                      else "5d/wk 20 MNQ, $2K @ $54K")
         log.info(f"Phase {self.phase}: {phase_desc}")
         log.info(f"{'='*55}\n")
 
@@ -275,9 +273,7 @@ class LiveExecutor:
                      f"({self.risk_skip_min}-{self.risk_skip_max})")
             return
 
-        now = datetime.now(CT)
-        is_tue_wed = now.weekday() in (1, 2)
-        qty = self.contracts_half if is_tue_wed else self.contracts
+        qty = self.contracts
 
         acct = self.broker.get_account_info()
         bal = acct.get('balance', self.start_balance)

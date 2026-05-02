@@ -192,8 +192,8 @@
     <div class="rules-grid">
       <div class="rule-card">
         <h4>Trade Filters</h4>
-        <p>P1: <span class="val">Mon-Fri</span> (Tue/Wed half size, $1K @ $53K)<br>
-        P2: <span class="val">Mon-Fri</span> (Tue/Wed half size, $2K @ $54K)<br>
+        <p>P1: <span class="val">Mon-Fri</span> 20 MNQ ($1K @ $53K)<br>
+        P2: <span class="val">Mon-Fri</span> 20 MNQ ($2K @ $54K)<br>
         Morning entries <span class="val">before 12 PM CT</span><br>
         Session close: <span class="val">2:55 PM CT</span></p>
       </div>
@@ -415,7 +415,7 @@
           ${rows.map(r => `<div class="compare-row"><span class="lbl">${r[0]}</span><span>${r[1]}</span></div>`).join('')}
         </div>
         <div class="compare-card highlight">
-          <h3>After (Mon-Fri, Tue/Wed Half Size)</h3>
+          <h3>After (Mon-Fri, 20 MNQ)</h3>
           ${rows.map(r => `<div class="compare-row"><span class="lbl">${r[0]}</span><span class="green">${r[2]}</span></div>`).join('')}
         </div>
       `;
@@ -423,11 +423,11 @@
 
     function renderFunded() {
       document.getElementById('fundedStats').innerHTML = [
-        { label: 'Payouts (backtest)', value: '25', cls: 'green', sub: 'over 2.8 years' },
+        { label: 'Payouts (backtest)', value: '26', cls: 'green', sub: 'over 2.8 years' },
         { label: 'Survival', value: '100%', cls: 'green', sub: 'never busted in backtest' },
-        { label: 'Total Net (90/10)', value: '$42,480', cls: 'green', sub: 'after profit split' },
-        { label: 'Total Value', value: '$111,476', cls: 'blue', sub: 'balance + withdrawals' },
-        { label: 'First Payout', value: 'Day 16', cls: 'green', sub: '16 trading days' },
+        { label: 'Total Net (90/10)', value: '$45,090', cls: 'green', sub: 'after profit split' },
+        { label: 'Total Value', value: '$119,745', cls: 'blue', sub: 'balance + withdrawals' },
+        { label: 'First Payout', value: 'Day 15', cls: 'green', sub: '15 trading days' },
       ].map(s => `<div class="funded-stat"><div class="label">${s.label}</div><div class="value ${s.cls}">${s.value}</div><div class="sub">${s.sub}</div></div>`).join('');
     }
 

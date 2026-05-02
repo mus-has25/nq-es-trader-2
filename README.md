@@ -68,8 +68,8 @@ Press `Ctrl+C` to stop and flatten all positions.
 Overall (filtered): 67.7% win rate, 2.25 profit factor, 328 trades at 20 MNQ.
 Signals with 30-50 tick risk are skipped (55% WR noise).
 
-**Phase 1** (until first payout): Mon-Fri mornings, Tue/Wed at half size (10 MNQ). Withdraw $1K at $53K.
-**Phase 2** (after first payout): Mon-Fri mornings, Tue/Wed at half size (10 MNQ). Withdraw $2K at $54K.
+**Phase 1** (until first payout): Mon-Fri mornings, 20 MNQ. Withdraw $1K at $53K.
+**Phase 2** (after first payout): Mon-Fri mornings, 20 MNQ. Withdraw $2K at $54K.
 
 ## Risk Management
 
