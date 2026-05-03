@@ -180,7 +180,7 @@
   <div class="header">
     <div>
       <h1>NQ Trading Bot - Strategy Dashboard</h1>
-      <div class="subtitle">OU + VWAP | 2-Phase Schedule | TopStepX 50K Funded</div>
+      <div class="subtitle">OU + Trend + VWAP | Model-Specific Sizing | TopStep 50K Eval</div>
     </div>
     <div class="model-pills" id="modelPills"></div>
   </div>
@@ -192,48 +192,47 @@
     <div class="rules-grid">
       <div class="rule-card">
         <h4>Trade Filters</h4>
-        <p>Schedule: <span class="val">Mon-Fri</span> up to 20 MNQ<br>
-        Dynamic sizing based on risk<br>
-        Morning entries <span class="val">before 12 PM CT</span><br>
+        <p>Schedule: <span class="val">Mon-Fri</span><br>
+        OU: <span class="val">12 MNQ</span> | Trend: <span class="val">14 MNQ</span> | VWAP: <span class="val">8 MNQ</span><br>
+        Signal cutoff: <span class="val">2 PM CT</span><br>
         Session close: <span class="val">2:55 PM CT</span></p>
       </div>
       <div class="rule-card">
         <h4>Risk Management</h4>
         <p>Max trade loss: <span class="val">$500</span> (dynamic sizing)<br>
-        Daily loss cap: <span class="val">-$500</span> prospective<br>
-        DD scaling: <span class="val">50%</span> at $1K+ drawdown<br>
+        Daily loss cap: <span class="val">-$600</span> prospective<br>
+        DD scaling: <span class="val">60%</span> at $300+ drawdown<br>
         Streak: <span class="val">75%</span> after 2 losing days<br>
         Slippage: <span class="val">50%</span> size under 50 ticks<br>
-        Trailing DD: <span class="val">$2,000</span> (EOD, locks at $50K)</p>
+        Trailing DD: <span class="val">$2,000</span> (always trails in eval)</p>
       </div>
       <div class="rule-card">
         <h4>Trade Management</h4>
         <p>Breakeven trigger: <span class="val">1.0R</span><br>
-        Partial exit: <span class="val">1.0R</span><br>
+        Partial exit: <span class="val">1.0R</span> (50% position)<br>
         Time stop: <span class="val">30-45 min</span><br>
         Session close: <span class="val">2:55 PM CT</span></p>
       </div>
       <div class="rule-card">
-        <h4>Funded Account</h4>
-        <p>Account: <span class="val">$50K TopStepX</span><br>
-        DD trails until peak <span class="val">$52K</span><br>
-        DD locks at: <span class="val">$50K floor</span><br>
-        Max position: <span class="val">20 MNQ</span></p>
+        <h4>Eval Phase</h4>
+        <p>Account: <span class="val">$50K TopStep Express</span><br>
+        Profit target: <span class="val">$3,000</span><br>
+        Trailing DD: <span class="val">$2,000</span> (never locks)<br>
+        Consistency: <span class="val">50%</span> (no day > 50% of profit)</p>
       </div>
       <div class="rule-card">
-        <h4>Withdrawal Strategy</h4>
-        <p>Mode: <span class="val">Adaptive</span><br>
-        Withdraw <span class="val">$500-$2K</span> when above buffer<br>
-        Buffer above DD floor: <span class="val">$2,000</span><br>
-        Requires: <span class="val">5 winning days</span> ($150+)<br>
-        Profit split: <span class="val">90/10</span></p>
+        <h4>XFA / Payout Rules</h4>
+        <p>XFA starts at: <span class="val">$0</span>, MLL: <span class="val">-$2K</span><br>
+        MLL locks at <span class="val">$0</span> when balance hits $2K<br>
+        Payout: <span class="val">$2K max</span>, 50% of balance<br>
+        Requires: <span class="val">5 green days</span> ($150+)</p>
       </div>
       <div class="rule-card">
         <h4>Models Active</h4>
-        <p><span class="val">OU Reversion</span> (PF 3.10, 131 trades)<br>
-        <span class="val">VWAP Reversion</span> (PF 1.83, 197 trades)<br>
-        Combined: <span class="val">67.8% WR, 2.30 PF</span><br>
-        <span class="val">296 trades</span> (VWAP skip Wed)</p>
+        <p><span class="val">OU Reversion</span> (12 MNQ, 9:50-15:00 ET)<br>
+        <span class="val">Trend Continuation</span> (14 MNQ, 10:00-15:00 ET)<br>
+        <span class="val">VWAP Reversion</span> (8 MNQ, skip Wed)<br>
+        Timeframe: <span class="val">1-minute bars</span></p>
       </div>
     </div>
   </div>
@@ -244,7 +243,7 @@
   </div>
 
   <div class="section">
-    <h2>Funded Account Projection (90 Trading Days, $1K Withdraw Cushion)</h2>
+    <h2>Live Config — OU:12 T:14 V:8 MNQ | TopStep 50K Eval</h2>
     <div class="funded-stats" id="fundedStats"></div>
   </div>
 
@@ -291,7 +290,7 @@
     <h2>Monthly Breakdown</h2>
     <table class="monthly" id="monthlyTable">
       <thead>
-        <tr><th>Month</th><th>Trades</th><th>Win Rate</th><th>Total R</th><th>$ PnL (20 MNQ)</th><th>Avg R</th><th>Best</th><th>Worst</th><th>Cum R</th></tr>
+        <tr><th>Month</th><th>Trades</th><th>Win Rate</th><th>Total R</th><th>$ PnL</th><th>Avg R</th><th>Best</th><th>Worst</th><th>Cum $</th></tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -305,19 +304,20 @@
       sweep: { bg: 'rgba(255,128,171,0.8)', line: '#ff80ab' },
     };
     const MNQ_TICK = 0.50;
-    const BASE_QTY = 20;
+    const MODEL_QTY = { ou_rev: 12, trend: 14, vwap_rev: 8 };
     const MAX_TRADE_LOSS = 500;
-    const DAILY_CAP = 500;
+    const DAILY_CAP = 600;
     const SLIP_SIZE_THRESHOLD = 50;
     const SLIP_SIZE_PCT = 0.50;
-    const DD_SCALE_START = 1000;
-    const DD_SCALE_FLOOR = 0.50;
+    const DD_SCALE_START = 300;
+    const DD_SCALE_FLOOR = 0.60;
+    const DD_RANGE = 400;
     const STREAK_AFTER = 2;
     const STREAK_PCT = 0.75;
-    const R_TO_USD = 440;
 
-    function dynQty(riskTicks) {
-      return Math.min(BASE_QTY, Math.floor(MAX_TRADE_LOSS / (riskTicks * MNQ_TICK)));
+    function dynQty(riskTicks, model) {
+      const maxQty = MODEL_QTY[model] || 12;
+      return Math.min(maxQty, Math.floor(MAX_TRADE_LOSS / (riskTicks * MNQ_TICK)));
     }
     function computeDailyPnl(trades) {
       const dailyMap = {};
@@ -332,13 +332,12 @@
         const isWed = new Date(dp[0], dp[1] - 1, dp[2]).getDay() === 3;
         dayTrades.forEach(t => {
           if (isWed && t.model === 'vwap_rev') return;
-          let qty = dynQty(t.risk_ticks);
+          let qty = dynQty(t.risk_ticks, t.model);
           if (t.risk_ticks < SLIP_SIZE_THRESHOLD) qty = Math.max(1, Math.floor(qty * SLIP_SIZE_PCT));
           if (inStreak) qty = Math.max(1, Math.floor(qty * STREAK_PCT));
           const dd = peak - (cumPnl + dayPnl);
           if (dd >= DD_SCALE_START) {
-            const ddRatio = Math.min(1.0, (dd - DD_SCALE_START) / 500);
-            const scale = 1.0 - (ddRatio * (1.0 - DD_SCALE_FLOOR));
+            const scale = Math.max(DD_SCALE_FLOOR, 1.0 - (dd - DD_SCALE_START) / DD_RANGE);
             qty = Math.max(1, Math.floor(qty * scale));
           }
           const potentialLoss = t.risk_ticks * qty * MNQ_TICK;
@@ -357,7 +356,7 @@
     let allTrades = [];
     let rawTrades = [];
     let filteredTrades = [];
-    let activeModels = new Set(['ou_rev', 'vwap_rev', 'trend', 'sweep']);
+    let activeModels = new Set(['ou_rev', 'trend', 'vwap_rev']);
     let activePeriod = 'all';
     let activeView = 'equity';
     let mainChart, modelChart, monthlyChart;
@@ -460,11 +459,11 @@
 
       document.getElementById('compareGrid').innerHTML = `
         <div class="compare-card">
-          <h3>Before (Raw, flat 20 MNQ)</h3>
+          <h3>Before (Raw, no risk controls)</h3>
           ${rows.map(r => `<div class="compare-row"><span class="lbl">${r[0]}</span><span>${r[1]}</span></div>`).join('')}
         </div>
         <div class="compare-card highlight">
-          <h3>After (Dynamic sizing + caps)</h3>
+          <h3>After (OU:12 T:14 V:8 + risk controls)</h3>
           ${rows.map(r => `<div class="compare-row"><span class="lbl">${r[0]}</span><span class="green">${r[2]}</span></div>`).join('')}
         </div>
       `;
@@ -472,14 +471,14 @@
 
     function renderFunded() {
       document.getElementById('fundedStats').innerHTML = [
-        { label: 'Withdrawals', value: '58', cls: 'green', sub: 'adaptive, $500-$2K each' },
-        { label: 'Total Withdrawn', value: '$50,400', cls: 'green', sub: 'over 2.8 years' },
-        { label: 'Total Value', value: '$102,857', cls: 'blue', sub: 'balance + withdrawals' },
-        { label: 'First Payout', value: 'Day 23', cls: 'green', sub: '23 trading days' },
-        { label: 'Max Trade Loss', value: '$499', cls: 'green', sub: 'dynamic sizing cap' },
-        { label: 'Worst Day', value: '$499', cls: 'green', sub: 'daily loss cap' },
-        { label: 'Max Drawdown', value: '$1,813', cls: 'green', sub: 'under $2K limit' },
-        { label: 'Avg Win Streak', value: '2.5 days', cls: 'green', sub: 'vs 1.6d losing' },
+        { label: 'Phase', value: 'EVAL', cls: 'blue', sub: 'TopStep Express 50K' },
+        { label: 'Profit Target', value: '$3,000', cls: 'green', sub: 'trailing DD $2K' },
+        { label: 'Sizing', value: '12/14/8', cls: 'blue', sub: 'OU / Trend / VWAP MNQ' },
+        { label: 'Daily Loss Cap', value: '$600', cls: 'yellow', sub: 'prospective check' },
+        { label: 'Max Trade Loss', value: '$500', cls: 'green', sub: 'dynamic sizing cap' },
+        { label: 'DD Scaling', value: '60%', cls: 'yellow', sub: 'at $300+ drawdown' },
+        { label: 'Consistency', value: '50%', cls: 'blue', sub: 'no day > 50% of profit' },
+        { label: 'Timeframe', value: '1-min', cls: 'blue', sub: '3 models, 1m bars' },
       ].map(s => `<div class="funded-stat"><div class="label">${s.label}</div><div class="value ${s.cls}">${s.value}</div><div class="sub">${s.sub}</div></div>`).join('');
     }
 
