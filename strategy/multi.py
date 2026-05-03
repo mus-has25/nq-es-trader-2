@@ -1,8 +1,4 @@
-"""Multi-model signal orchestrator v9 — confluence scoring + trailing stops.
-
-Loads all registered models, precomputes shared context (VWAP, ORB, regime,
-daily levels), merges signals, scores confluence, and resolves conflicts.
-"""
+"""Multi-model signal orchestrator — generates, filters, and resolves signals."""
 from __future__ import annotations
 import pandas as pd
 import numpy as np
@@ -11,8 +7,6 @@ from config import Config
 from strategy.vwap import compute_vwap, compute_opening_range
 from strategy.models.base import Signal
 from strategy.models import ALL_MODELS
-
-CONFLUENCE_THRESHOLD = 3
 
 
 class MultiModelGenerator:
@@ -30,74 +24,16 @@ class MultiModelGenerator:
         from strategy.quant import compute_all_quant_features
         df = compute_all_quant_features(df)
 
-        vol_ma = df['volume'].rolling(20, min_periods=5).mean()
-        ema9 = df['close'].ewm(span=9, adjust=False).mean()
-        ema21 = df['close'].ewm(span=21, adjust=False).mean()
-
         context = self._build_context(daily)
-
-        regime_map = context['regime_map']
 
         all_signals: list[Signal] = []
         for model in self.models:
             sigs = model.generate(df, daily, context)
             all_signals.extend(sigs)
 
-        filtered = []
-        for sig in all_signals:
-            t = sig.ts.time()
-            if t >= dt_time(14, 30):
-                continue
-            filtered.append(sig)
-
+        filtered = [s for s in all_signals if s.ts.time() < dt_time(14, 30)]
         filtered.sort(key=lambda s: s.idx)
-        resolved = self._resolve_conflicts(filtered)
-        return resolved
-
-    def _confluence_score(self, sig: Signal, df: pd.DataFrame,
-                          context: dict, vol_ma, ema9, ema21) -> int:
-        idx = sig.idx
-        if idx >= len(df):
-            return 0
-        bar = df.iloc[idx]
-        d = sig.ts.date()
-        t = sig.ts.time()
-        score = 0
-
-        regime_map = context['regime_map']
-        daily_map = context['daily_map']
-        regime = regime_map.get(d, 'chop')
-
-        is_long = sig.direction == 'long'
-
-        if (is_long and regime == 'bull') or (not is_long and regime == 'bear'):
-            score += 2
-        elif regime == 'chop':
-            score += 1
-
-        vwap = bar.get('vwap')
-        if not pd.isna(vwap):
-            if (is_long and bar['close'] > vwap) or (not is_long and bar['close'] < vwap):
-                score += 1
-
-        if idx < len(vol_ma) and not pd.isna(vol_ma.iloc[idx]):
-            if bar['volume'] > 1.2 * vol_ma.iloc[idx]:
-                score += 1
-
-        if idx < len(ema9) and idx < len(ema21):
-            e9, e21 = ema9.iloc[idx], ema21.iloc[idx]
-            if (is_long and e9 > e21) or (not is_long and e9 < e21):
-                score += 1
-
-        if dt_time(9, 45) <= t <= dt_time(11, 30):
-            score += 1
-        elif dt_time(13, 30) <= t <= dt_time(15, 0):
-            score += 1
-
-        if sig.rr >= 2.5:
-            score += 1
-
-        return score
+        return self._resolve_conflicts(filtered)
 
     def _build_context(self, daily: pd.DataFrame) -> dict:
         daily_map = {}
@@ -108,7 +44,7 @@ class MultiModelGenerator:
         ema50 = self._ema(closes, 50)
 
         for i in range(1, len(daily_s)):
-            d = daily_s.iloc[i]['date']
+            d = pd.Timestamp(daily_s.iloc[i]['date']).date()
             prev = daily_s.iloc[i - 1]
             daily_map[d] = {
                 'pdh': prev['high'], 'pdl': prev['low'],

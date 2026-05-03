@@ -12,9 +12,9 @@ log = logging.getLogger(__name__)
 
 URLS = {
     'demo': {
-        'rest': 'https://gateway-api-demo.s2f.projectx.com',
-        'market_hub': 'https://gateway-rtc-demo.s2f.projectx.com/hubs/market',
-        'user_hub': 'https://gateway-rtc-demo.s2f.projectx.com/hubs/user',
+        'rest': 'https://api.topstepx.com',
+        'market_hub': 'https://rtc.topstepx.com/hubs/market',
+        'user_hub': 'https://rtc.topstepx.com/hubs/user',
     },
     'live': {
         'rest': 'https://api.topstepx.com',
@@ -23,14 +23,24 @@ URLS = {
     },
 }
 
-# Order types
+# Order types (ProjectX API enum)
 LIMIT = 1
 MARKET = 2
-STOP = 3
+STOP_LIMIT = 3
+STOP = 4
+TRAILING_STOP = 5
 
 # Sides
 BUY = 0
 SELL = 1
+
+# Order statuses
+ORD_OPEN = 1
+ORD_FILLED = 2
+ORD_CANCELLED = 3
+ORD_EXPIRED = 4
+ORD_REJECTED = 5
+ORD_PENDING = 6
 
 # Month codes for futures
 MONTH_CODES = {1:'F', 2:'G', 3:'H', 4:'J', 5:'K', 6:'M',
@@ -127,9 +137,8 @@ class TopStepBroker:
 
         verify = self._post('/api/Contract/searchById',
                             {'contractId': self.contract_id})
-        contracts = verify.get('contracts', [])
-        if contracts:
-            c = contracts[0]
+        c = verify.get('contract')
+        if c:
             self.tick_size = c.get('tickSize', 0.25)
             log.info(f"Verified: {c.get('name', self.contract_id)} "
                      f"tick={self.tick_size}")
@@ -146,8 +155,8 @@ class TopStepBroker:
             json={}, headers=self._headers(), timeout=10,
         )
         data = resp.json()
-        if data.get('token'):
-            self.token = data['token']
+        if data.get('newToken'):
+            self.token = data['newToken']
         self.token_expiry = time.time() + 23 * 3600
 
     # ── Market Data ──────────────────────────────────────────────────
@@ -192,20 +201,25 @@ class TopStepBroker:
 
     # ── Orders ───────────────────────────────────────────────────────
 
-    def place_bracket(self, direction: str, qty: int,
-                      stop_price: float, target_price: float) -> dict:
+    def place_limit_entry(self, direction: str, qty: int,
+                          entry_price: float) -> int:
         side = BUY if direction == 'long' else SELL
-        exit_side = SELL if direction == 'long' else BUY
-
         entry = self._post('/api/Order/place', {
             'accountId': self.account_id,
             'contractId': self.contract_id,
-            'type': MARKET,
+            'type': LIMIT,
             'side': side,
             'size': qty,
+            'limitPrice': self._round(entry_price),
         })
         self._entry_order_id = entry.get('orderId')
-        log.info(f"Entry order placed: {self._entry_order_id}")
+        log.info(f"Entry LIMIT {direction.upper()} {qty} @ {entry_price:.2f} "
+                 f"(#{self._entry_order_id})")
+        return self._entry_order_id
+
+    def place_exit_bracket(self, direction: str, qty: int,
+                           stop_price: float, target_price: float) -> dict:
+        exit_side = SELL if direction == 'long' else BUY
 
         stop_resp = self._post('/api/Order/place', {
             'accountId': self.account_id,
@@ -227,10 +241,9 @@ class TopStepBroker:
         })
         self._target_order_id = target_resp.get('orderId')
 
-        log.info(f"Bracket placed — stop: {stop_price} (#{self._stop_order_id})"
+        log.info(f"Exit bracket placed — stop: {stop_price} (#{self._stop_order_id})"
                  f" target: {target_price} (#{self._target_order_id})")
         return {
-            'entry': self._entry_order_id,
             'stop': self._stop_order_id,
             'target': self._target_order_id,
         }
@@ -244,6 +257,22 @@ class TopStepBroker:
             'stopPrice': self._round(new_price),
         })
         log.info(f"Stop modified → {new_price}")
+
+    def get_order_status(self, order_id: int) -> int | None:
+        if not order_id:
+            return None
+        try:
+            data = self._post('/api/Order/searchOpen', {
+                'accountId': self.account_id,
+            })
+            for o in data.get('orders', []):
+                if o.get('id') == order_id:
+                    return o.get('status')
+            if self.position_size() > 0:
+                return ORD_FILLED
+            return ORD_CANCELLED
+        except Exception:
+            return None
 
     def cancel_order(self, order_id: int):
         if not order_id:

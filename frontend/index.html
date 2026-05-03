@@ -203,7 +203,7 @@
         Daily loss cap: <span class="val">-$500</span> prospective<br>
         DD scaling: <span class="val">50%</span> at $1K+ drawdown<br>
         Streak: <span class="val">75%</span> after 2 losing days<br>
-        Skip <span class="val">30-50 tick</span> dead zone<br>
+        Slippage: <span class="val">50%</span> size under 50 ticks<br>
         Trailing DD: <span class="val">$2,000</span> (EOD, locks at $50K)</p>
       </div>
       <div class="rule-card">
@@ -308,8 +308,8 @@
     const BASE_QTY = 20;
     const MAX_TRADE_LOSS = 500;
     const DAILY_CAP = 500;
-    const DEAD_ZONE_MIN = 30;
-    const DEAD_ZONE_MAX = 50;
+    const SLIP_SIZE_THRESHOLD = 50;
+    const SLIP_SIZE_PCT = 0.50;
     const DD_SCALE_START = 1000;
     const DD_SCALE_FLOOR = 0.50;
     const STREAK_AFTER = 2;
@@ -331,9 +331,9 @@
         const dp = d.split('-');
         const isWed = new Date(dp[0], dp[1] - 1, dp[2]).getDay() === 3;
         dayTrades.forEach(t => {
-          if (t.risk_ticks >= DEAD_ZONE_MIN && t.risk_ticks <= DEAD_ZONE_MAX) return;
           if (isWed && t.model === 'vwap_rev') return;
           let qty = dynQty(t.risk_ticks);
+          if (t.risk_ticks < SLIP_SIZE_THRESHOLD) qty = Math.max(1, Math.floor(qty * SLIP_SIZE_PCT));
           if (inStreak) qty = Math.max(1, Math.floor(qty * STREAK_PCT));
           const dd = peak - (cumPnl + dayPnl);
           if (dd >= DD_SCALE_START) {

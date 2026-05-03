@@ -65,8 +65,8 @@ Press `Ctrl+C` to stop and flatten all positions.
 - **OU Reversion**: Mean-reversion on Ornstein-Uhlenbeck process (PF 3.10, 131 trades)
 - **VWAP Reversion**: VWAP-based mean reversion (PF 1.83, 197 trades)
 
-Overall (filtered): 67.8% win rate, 2.30 profit factor, 296 trades with dynamic sizing.
-Signals with 30-50 tick risk are skipped (55% WR noise). VWAP skipped on Wednesdays (50% WR coin flip).
+Overall (filtered): 67.7% win rate, 2.25 profit factor, 296 trades with dynamic sizing.
+Trades under 50 ticks risk sized at 50% (slippage protection). VWAP skipped on Wednesdays (50% WR coin flip).
 
 Mon-Fri mornings, up to 20 MNQ dynamically sized per trade risk.
 
@@ -76,11 +76,11 @@ Requires 5 winning days ($150+) per TopStepX rules. 60 withdrawals in backtest.
 ## Risk Management
 
 - Dynamic position sizing: `qty = min(20, floor($500 / (risk_ticks * $0.50)))` caps max trade loss at $500
+- Slippage size reduction: 50% size for trades under 50 ticks risk (2-3 tick slippage eats 4-10% of R on small trades)
 - $500 prospective daily loss cap (skip trades if worst-case would breach)
 - Progressive DD scaling: reduce to 50% as drawdown grows from $1K to $1.5K
 - 75% size after 2 consecutive losing days (streak protection)
 - $2,000 trailing drawdown (locks at $50K floor when peak hits $52K)
-- Skip 30-50 tick risk signals (dead zone filter)
 - $2,000 adaptive withdrawal buffer above DD floor
 - Breakeven stops, partial exits
 - Time stops per model (30-45 min)

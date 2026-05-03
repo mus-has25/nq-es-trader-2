@@ -26,8 +26,10 @@ logging.basicConfig(
 
 def main():
     p = argparse.ArgumentParser(description='NQ Trading Bot — TopStepX 50K')
-    p.add_argument('--contracts', type=int,
-                   default=int(os.getenv('CONTRACTS', '20')))
+    p.add_argument('--ou', type=int, default=12)
+    p.add_argument('--trend', type=int, default=14)
+    p.add_argument('--vwap', type=int, default=8)
+    p.add_argument('--phase', default='eval', choices=['eval', 'xfa', 'payout'])
     p.add_argument('--env', default=os.getenv('TOPSTEP_ENV', 'demo'),
                    choices=['demo', 'live'])
     args = p.parse_args()
@@ -46,16 +48,24 @@ def main():
     cfg.instrument = InstrumentConfig('MNQ', 0.25, 0.50, 2.0)
     cfg.account_size = 50000
 
+    model_qty = {'ou_rev': args.ou, 'trend': args.trend, 'vwap_rev': args.vwap}
+
+    phase_info = {
+        'eval': '$3K target, $2K trailing DD, 50% consistency',
+        'xfa':  '$0 start, $2K trailing DD, locks at $0 floor',
+        'payout': '5 win days $150+, $2K max payout',
+    }
+
     print(f"""
 ╔══════════════════════════════════════════════════════╗
 ║          NQ TRADING BOT — TOPSTEP 50K               ║
 ╠══════════════════════════════════════════════════════╣
-║  Contracts:  {args.contracts} MNQ (max 20 = 2 NQ){' ' * (21 - len(str(args.contracts)))}║
-║  Mode:       {args.env.upper()}{' ' * (38 - len(args.env))}║
-║  Models:     OU + VWAP + Trend + Sweep               ║
-║  Risk:       1.8R profit cap / 0.25R loss cap        ║
-║  DD:         $2K trailing (locks at $52K)             ║
-║  Payout:     90/10 | 5 winning days                  ║
+║  Phase:      {args.phase.upper():<39}║
+║  Sizing:     OU:{args.ou}  Trend:{args.trend}  VWAP:{args.vwap} MNQ{' ' * (22 - len(str(args.ou)) - len(str(args.trend)) - len(str(args.vwap)))}║
+║  Mode:       {args.env.upper():<39}║
+║  Models:     OU + Trend + VWAP Reversion             ║
+║  Risk:       $500 max/trade, $600 daily cap          ║
+║  Rules:      {phase_info[args.phase]:<39}║
 ╠══════════════════════════════════════════════════════╣
 ║  Press Ctrl+C to stop and flatten all positions      ║
 ╚══════════════════════════════════════════════════════╝
@@ -70,7 +80,7 @@ def main():
         print("Check your .env credentials and try again.")
         return
 
-    executor = LiveExecutor(cfg, broker, contracts=args.contracts)
+    executor = LiveExecutor(cfg, broker, model_qty=model_qty, phase=args.phase)
 
     try:
         executor.run()

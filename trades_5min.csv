@@ -1,2 +1,0 @@
-entry_time,exit_time,direction,entry,exit,stop,target,reason,risk_ticks,partial_r,remainder_r,total_r,moved_be,partial_taken,sweep_level,month
-2026-04-02 04:15:00,2026-04-02 04:50:00,long,23834.5,23834.5,23805.25,23922.25,breakeven,117.0,0.0,0.0,0.0,True,False,overnight_low,2026-04
