@@ -126,7 +126,7 @@ class MetricsV2:
         df = self.df.copy()
         df['date'] = pd.to_datetime(df['entry_time']).dt.date
 
-        mnq_tick_val = 1.25
+        mnq_tick_val = 0.50
 
         if risk_per_contract_ticks is None:
             risk_per_contract_ticks = df['risk_ticks'].median()
@@ -381,7 +381,7 @@ class MetricsV2:
 
         df = self.df.copy()
         df['date'] = pd.to_datetime(df['entry_time']).dt.date
-        mnq_tick_val = 1.25
+        mnq_tick_val = 0.50
         risk_per_contract_ticks = df['risk_ticks'].median()
 
         daily_r = df.groupby('date')['total_r'].sum().reset_index()
@@ -474,11 +474,11 @@ class MetricsV2:
             'avg_num_payouts': num_payouts_arr.mean(),
         }
 
-    def print_funded_projection(self, eval_contracts: int = 9):
+    def print_funded_projection(self, eval_contracts: int = 20):
         print(f"\n{'='*80}")
-        print("  LUCIDPRO 50K — FUNDED PAYOUT PROJECTION")
-        print(f"  Eval: {eval_contracts} MNQ → 75% pass | Funded: $53K start, $51K locked floor")
-        print(f"  Payout caps: $2K, $2K, $4K, $4K, $6K → then LucidLive (no caps)")
+        print("  TOPSTEP 50K — FUNDED PAYOUT PROJECTION")
+        print(f"  Eval: {eval_contracts} MNQ | TopStep 50K Express")
+        print(f"  Payout cap: $2K max, ≤50% balance, 5 green days ($150+)")
         print(f"{'='*80}")
 
         print(f"\n  --- Per-account funded performance (65 trading days, biweekly payouts) ---")

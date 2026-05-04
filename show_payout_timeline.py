@@ -33,8 +33,8 @@ def main():
     daily_r.columns = ['date', 'r']
     daily_r = daily_r.sort_values('date').reset_index(drop=True)
 
-    contracts = 9
-    mnq_tick_val = 1.25
+    contracts = 20
+    mnq_tick_val = 0.50
     risk_ticks = df['risk_ticks'].median()
     r_to_usd = risk_ticks * contracts * mnq_tick_val
 
@@ -49,7 +49,7 @@ def main():
     profit_split = 0.90
     min_buffer = 800
     min_payout = 500
-    daily_loss_limit = 1200
+    daily_loss_limit = 1000
 
     # Run many sims, collect detailed traces
     all_sims = []

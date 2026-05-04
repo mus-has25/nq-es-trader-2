@@ -7,6 +7,7 @@ from config import Config
 from strategy.vwap import compute_vwap, compute_opening_range
 from strategy.models.base import Signal
 from strategy.models import ALL_MODELS
+from strategy.quality import filter_by_quality
 
 
 class MultiModelGenerator:
@@ -33,7 +34,8 @@ class MultiModelGenerator:
 
         filtered = [s for s in all_signals if s.ts.time() < dt_time(14, 30)]
         filtered.sort(key=lambda s: s.idx)
-        return self._resolve_conflicts(filtered)
+        resolved = self._resolve_conflicts(filtered)
+        return filter_by_quality(resolved, df)
 
     def _build_context(self, daily: pd.DataFrame) -> dict:
         daily_map = {}

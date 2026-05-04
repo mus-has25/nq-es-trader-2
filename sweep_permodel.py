@@ -32,9 +32,9 @@ def run_with_overrides(raw, daily, cfg, overrides: dict):
     trades = engine.run(raw, signals)
     m = MetricsV2(trades, cfg)
 
-    r = m.funded_sim(contracts=9, target_usd=3000, max_dd_usd=2000,
+    r = m.funded_sim(contracts=20, target_usd=3000, max_dd_usd=2000,
                      window_days=20, trailing_dd=True,
-                     daily_loss_limit_usd=1200)
+                     daily_loss_limit_usd=1000)
 
     model_stats = {}
     if not m.df.empty:

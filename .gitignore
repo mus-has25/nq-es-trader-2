@@ -9,12 +9,9 @@ __pycache__/
 venv/
 env/
 
-# Large data files (not needed for live trading)
-data/Dataset_NQ_1min_2022_2025.csv
-data/NQ_*.csv
-data/ES_*.csv
-data/v*_trades.csv
+# Archives
 data/archive.zip
+data/v*_trades.csv
 
 # Generated images
 *.png

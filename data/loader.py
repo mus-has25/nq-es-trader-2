@@ -18,11 +18,16 @@ def load_csv(filepath: str, symbol: str = "NQ") -> pd.DataFrame:
     else:
         df['datetime'] = pd.to_datetime(df.iloc[:, 0])
 
+    if df['datetime'].dt.tz is not None:
+        df['datetime'] = df['datetime'].dt.tz_convert('US/Eastern').dt.tz_localize(None)
+
     for col in ['open', 'high', 'low', 'close', 'volume']:
         if col not in df.columns:
             raise ValueError(f"Missing column: {col}")
 
     df = df[['datetime', 'open', 'high', 'low', 'close', 'volume']].copy()
+    df['volume'] = df['volume'].fillna(0).astype(int)
+    df.loc[df['volume'] == 0, 'volume'] = 1
     df = df.sort_values('datetime').reset_index(drop=True)
     df['symbol'] = symbol
     return df

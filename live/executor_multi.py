@@ -1,12 +1,12 @@
 """Live executor — runs OU+Trend+VWAP strategy on TopStepX funded account.
 
-Schedule: Mon-Fri mornings, model-specific sizing (OU:12 T:14 V:8 MNQ).
+Schedule: Mon-Fri mornings, flat 20 MNQ sizing with q>=8 quality filter.
 
 Adaptive withdrawals: extract $500-$2K whenever balance exceeds
 DD floor + $2K buffer. Requires 5 winning days ($150+) per TopStepX.
 
 Risk controls:
-- Model-specific position sizing: OU:12, Trend:14, VWAP:8 MNQ
+- Flat 20 MNQ sizing for all models (quality-filtered signals only)
 - Slippage size reduction: 50% size for trades under 50 ticks risk
 - $600 prospective daily loss cap: skip trades if worst-case would breach
 - Progressive DD scaling: reduce to 50% as DD grows from $1K to $1.5K
@@ -63,7 +63,7 @@ class LiveExecutor:
                  model_qty: dict | None = None, phase: str = 'eval'):
         self.cfg = cfg
         self.broker = broker
-        self.model_qty = model_qty or {'ou_rev': 12, 'trend': 14, 'vwap_rev': 8}
+        self.model_qty = model_qty or {'ou_rev': 20, 'trend': 20, 'vwap_rev': 20}
         self.phase = phase
 
         self.buf = pd.DataFrame()

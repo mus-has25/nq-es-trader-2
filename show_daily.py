@@ -38,14 +38,14 @@ def main():
         losses=('total_r', lambda x: (x <= 0).sum()),
     ).reset_index().sort_values('date')
 
-    contracts = 9
-    mnq_tick_val = 1.25
+    contracts = 20
+    mnq_tick_val = 0.50
     risk_ticks = df['risk_ticks'].median()
     r_to_usd = risk_ticks * contracts * mnq_tick_val
 
     target = 3000
     max_dd = 2000
-    daily_loss_limit = 1200
+    daily_loss_limit = 1000
 
     r_vals = daily_r['total_r'].values
     dates = daily_r['date'].values
@@ -56,7 +56,7 @@ def main():
     print("  DAILY R DISTRIBUTION (what a typical day looks like)")
     print("=" * 70)
     print(f"  Total trading days: {n}")
-    print(f"  Risk per trade: {risk_ticks:.0f} ticks × 9 MNQ × $1.25 = ${r_to_usd:.0f}/R")
+    print(f"  Risk per trade: {risk_ticks:.0f} ticks × 20 MNQ × $0.50 = ${r_to_usd:.0f}/R")
     print(f"  Avg daily R: {r_vals.mean():+.2f}R (${r_vals.mean() * r_to_usd:+.0f})")
     print(f"  Median daily R: {np.median(r_vals):+.2f}R (${np.median(r_vals) * r_to_usd:+.0f})")
 
@@ -87,7 +87,7 @@ def main():
 
     # ---- Example 20-day windows ----
     print(f"\n{'=' * 70}")
-    print("  EXAMPLE 20-DAY EVAL WINDOWS (9 MNQ, LucidPro 50K)")
+    print("  EXAMPLE 20-DAY EVAL WINDOWS (20 MNQ, TopStep 50K)")
     print(f"  Target: ${target:,}  |  Trail DD: ${max_dd:,}  |  Daily limit: ${daily_loss_limit:,}")
     print(f"{'=' * 70}")
 

@@ -26,9 +26,9 @@ logging.basicConfig(
 
 def main():
     p = argparse.ArgumentParser(description='NQ Trading Bot — TopStepX 50K')
-    p.add_argument('--ou', type=int, default=12)
-    p.add_argument('--trend', type=int, default=14)
-    p.add_argument('--vwap', type=int, default=8)
+    p.add_argument('--ou', type=int, default=20)
+    p.add_argument('--trend', type=int, default=20)
+    p.add_argument('--vwap', type=int, default=20)
     p.add_argument('--phase', default='eval', choices=['eval', 'xfa', 'payout'])
     p.add_argument('--env', default=os.getenv('TOPSTEP_ENV', 'demo'),
                    choices=['demo', 'live'])
