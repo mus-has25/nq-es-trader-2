@@ -23,10 +23,10 @@ MAX_PIVOT_AGE  = 80    # max bars between pivot and sweep
 FVG_POST       = 7     # bars AFTER sweep to search for FVG
 MAX_SWEEP_AGE  = 55    # bars from sweep to AM entry
 MIN_BARS_AFTER = 3     # entry at least N bars after sweep
-MIN_FVG_TICKS  = 5     # minimum FVG width in ticks
+MIN_FVG_TICKS  = 3     # minimum FVG width in ticks
 MIN_SWEEP_TICKS= 4     # sweep must clear pivot by at least N ticks
-DISPLACE_ATR_X = 1.2   # sweep bar range >= N × ATR(10)
-SWEEP_CLOSE_PCT= 0.60  # sweep bar close in top X% of range (hammer quality)
+DISPLACE_ATR_X = 1.1   # sweep bar range >= N × ATR(10)
+SWEEP_CLOSE_PCT= 0.50  # sweep bar close in top X% of range (hammer quality)
 TARGET_RR      = 2.0   # risk multiple for target
 MIN_RR         = 1.5
 MIN_RISK_TICKS = 8
