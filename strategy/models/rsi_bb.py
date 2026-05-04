@@ -57,6 +57,48 @@ class RSIBollingerModel(BaseModel):
     # ── Main ────────────────────────────────────────────────────────────────────
     def generate(self, df: pd.DataFrame, daily: pd.DataFrame,
                  context: dict) -> list[Signal]:
+        # Auto-resample 1M → 5M when live data is passed at 1-minute resolution
+        median_gap = df['datetime'].diff().dropna().median()
+        if pd.notna(median_gap) and median_gap.total_seconds() < 290:
+            df_orig = df.reset_index(drop=True)
+            df = (df.set_index('datetime')[['open','high','low','close','volume']]
+                  .resample('5min')
+                  .agg({'open':'first','high':'max','low':'min',
+                        'close':'last','volume':'sum'})
+                  .dropna(subset=['open'])
+                  .reset_index())
+            df['symbol'] = df_orig['symbol'].iloc[0]
+            need_remap = True
+        else:
+            df_orig    = None
+            need_remap = False
+
+        signals = self._generate_5m(df, context)
+
+        if need_remap and signals:
+            signals = self._remap_to_1m(signals, df_orig)
+
+        return signals
+
+    def _remap_to_1m(self, signals: list[Signal],
+                     df1m: pd.DataFrame) -> list[Signal]:
+        remapped = []
+        for sig in signals:
+            mask = df1m['datetime'] >= sig.ts
+            if not mask.any():
+                continue
+            new_idx = int(df1m.index[mask][0])
+            remapped.append(Signal(
+                idx=new_idx, ts=sig.ts, model=sig.model,
+                direction=sig.direction, entry=sig.entry,
+                stop=sig.stop, target=sig.target,
+                risk_ticks=sig.risk_ticks, reward_ticks=sig.reward_ticks,
+                rr=sig.rr, tag=sig.tag, priority=sig.priority,
+                risk_profile=sig.risk_profile,
+            ))
+        return remapped
+
+    def _generate_5m(self, df: pd.DataFrame, context: dict) -> list[Signal]:
         daily_map  = context.get('daily_map', {})
         regime_map = context.get('regime_map', {})
 

@@ -102,11 +102,37 @@ class LiveExecutor:
     def run(self):
         log.info("Loading historical bars for warmup (need 50+ daily bars for regime)...")
         self.buf = self.broker.get_bars(minutes_back=120000)
-        log.info(f"Loaded {len(self.buf)} bars "
-                 f"({self.buf['datetime'].min()} → {self.buf['datetime'].max()})")
+        if self.buf.empty or 'datetime' not in self.buf.columns:
+            log.warning("Warmup bars empty or missing — retrying once...")
+            time.sleep(5)
+            self.buf = self.broker.get_bars(minutes_back=120000)
 
-        self.daily_df = build_daily_bars(self.buf)
-        self.daily_df['date'] = pd.to_datetime(self.daily_df['date']).dt.date
+        # Fallback: API returns no bars after-hours / on weekends
+        if self.buf.empty or 'datetime' not in self.buf.columns:
+            log.warning("API returned no intraday bars — will use daily CSV for regime warmup")
+            self.buf = pd.DataFrame(columns=['datetime','open','high','low','close','volume','symbol'])
+
+        if not self.buf.empty and 'datetime' in self.buf.columns:
+            log.info(f"Loaded {len(self.buf)} bars "
+                     f"({self.buf['datetime'].min()} → {self.buf['datetime'].max()})")
+        else:
+            log.warning("Running with no warmup data")
+
+        if not self.buf.empty:
+            self.daily_df = build_daily_bars(self.buf)
+        else:
+            # Load pre-built daily bars from CSV for regime detection
+            import os
+            _daily_csv = os.path.join(os.path.dirname(__file__), '..', 'data', 'NQ_daily.csv')
+            if os.path.exists(_daily_csv):
+                log.info(f"Loading daily bars from {_daily_csv} for regime detection")
+                self.daily_df = pd.read_csv(_daily_csv, parse_dates=['datetime'])
+                self.daily_df = self.daily_df.rename(columns={'datetime': 'date'})
+                self.daily_df['date'] = pd.to_datetime(self.daily_df['date']).dt.normalize()
+            else:
+                self.daily_df = pd.DataFrame()
+        if not self.daily_df.empty:
+            self.daily_df['date'] = pd.to_datetime(self.daily_df['date']).dt.date
         n_daily = len(self.daily_df)
         log.info(f"Daily bars: {n_daily} (need 50+ for regime)")
         if n_daily < 50:
